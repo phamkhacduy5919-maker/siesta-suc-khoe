@@ -1,0 +1,49 @@
+name: siesta_suc_khoe
+description: "Siesta Sức Khỏe - Ứng dụng Y2K AI cảnh báo tư thế, chớp mắt và phục hồi năng lượng linh hồn tối ưu cho Oppo A5 Pro 5G"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Quản lý Camera trước / sau và phân tích hình ảnh AI
+  camera: ^0.11.0+2
+
+  # Dịch vụ chạy nền định kỳ ngắt quãng không làm nóng Oppo A5 Pro 5G
+  flutter_background_service: ^2.4.9
+  flutter_local_notifications: ^17.2.1
+
+  # Phát âm thanh chữa lành Lo-Fi & đọc file giọng nói custom (.mp3 / .wav)
+  audioplayers: ^6.1.0
+
+  # Chọn file giọng nói custom từ bộ nhớ máy
+  file_picker: ^8.1.4
+
+  # Quản lý cấp quyền Camera, Microphone, Bộ nhớ, Chạy nền
+  permission_handler: ^11.3.1
+
+  # Quản lý trạng thái toàn cục (State Management)
+  provider: ^6.1.2
+
+  # Lưu trữ cấu hình người dùng & đường dẫn file âm thanh custom
+  shared_preferences: ^2.3.2
+
+  # Giao diện & Hiệu ứng âm thanh / Rung phản hồi ma mị Y2K
+  vibration: ^2.0.1
+  google_fonts: ^6.2.1
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/audio/
+    - assets/images/
