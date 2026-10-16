@@ -26,7 +26,7 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Auto-organize files & create Flutter project skeleton
+      - name: Auto-organize files & configure Android 36 + Desugaring
         run: |
           mkdir -p temp_backup
           cp -r *.dart *.yaml *.gradle *.xml temp_backup/ 2>/dev/null || true
@@ -44,17 +44,62 @@ jobs:
           [ -f temp_backup/ai_siesta_service.dart ] && cp temp_backup/ai_siesta_service.dart lib/services/ai_siesta_service.dart
           [ -f temp_backup/background_service.dart ] && cp temp_backup/background_service.dart lib/services/background_service.dart
           [ -f temp_backup/soul_battery_provider.dart ] && cp temp_backup/soul_battery_provider.dart lib/providers/soul_battery_provider.dart
-
           [ -f temp_backup/AndroidManifest.xml ] && cp temp_backup/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
-          [ -f temp_backup/build.gradle ] && cp temp_backup/build.gradle android/app/build.gradle
           [ -f temp_backup/pubspec.yaml ] && cp temp_backup/pubspec.yaml pubspec.yaml
 
-          # Tự động nâng compileSdk lên 35 cho tương thích audioplayers và camera
-          sed -i 's/compileSdk = .*/compileSdk = 35/g' android/app/build.gradle 2>/dev/null || true
-          sed -i 's/compileSdk .*/compileSdk 35/g' android/app/build.gradle 2>/dev/null || true
-          sed -i 's/compileSdkVersion .*/compileSdkVersion 35/g' android/app/build.gradle 2>/dev/null || true
-          sed -i 's/targetSdk = .*/targetSdk = 35/g' android/app/build.gradle 2>/dev/null || true
-          sed -i 's/targetSdk .*/targetSdk 35/g' android/app/build.gradle 2>/dev/null || true
+          # Tự động tạo build.gradle chuẩn xác với compileSdk 36 và Java Desugaring
+          cat << 'EOF' > android/app/build.gradle
+          plugins {
+              id "com.android.application"
+              id "kotlin-android"
+              id "dev.flutter.flutter-gradle-plugin"
+          }
+
+          android {
+              namespace "com.example.siesta_suc_khoe"
+              compileSdk 36
+              ndkVersion "25.1.8937393"
+
+              compileOptions {
+                  coreLibraryDesugaringEnabled true
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+
+              kotlinOptions {
+                  jvmTarget = '17'
+              }
+
+              defaultConfig {
+                  applicationId "com.example.siesta_suc_khoe"
+                  minSdk 24
+                  targetSdk 36
+                  versionCode 1
+                  versionName "1.0"
+                  multiDexEnabled true
+
+                  ndk {
+                      abiFilters 'arm64-v8a', 'armeabi-v7a'
+                  }
+              }
+
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.debug
+                      minifyEnabled false
+                      shrinkResources false
+                  }
+              }
+          }
+
+          dependencies {
+              coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+          }
+
+          flutter {
+              source '../..'
+          }
+          EOF
 
           rm -rf temp_backup
 
