@@ -52,7 +52,7 @@ jobs:
           # Xóa bỏ thuộc tính package thừa trong AndroidManifest.xml
           sed -i 's/package="[^"]*"//g' app_build/android/app/src/main/AndroidManifest.xml 2>/dev/null || true
 
-          # Thêm cấu hình bỏ qua xung đột AAR metadata vào gradle.properties chuẩn
+          # Thêm cấu hình bỏ qua xung đột AAR metadata vào gradle.properties
           cat << 'EOF' >> app_build/android/gradle.properties
           android.useAndroidX=true
           android.enableJetifier=true
@@ -60,16 +60,107 @@ jobs:
           android.suppressUnsupportedCompileSdk=36
           EOF
 
-          # Cấu hình android/app/build.gradle
           cd app_build
-          sed -i 's/compileSdk = .*/compileSdk = 36/g' android/app/build.gradle* 2>/dev/null || true
-          sed -i 's/compileSdkVersion .*/compileSdkVersion 36/g' android/app/build.gradle* 2>/dev/null || true
-          sed -i 's/targetSdk = .*/targetSdk = 36/g' android/app/build.gradle* 2>/dev/null || true
 
-          if [ -f android/app/build.gradle ]; then
-            sed -i '/compileOptions {/a \        coreLibraryDesugaringEnabled true' android/app/build.gradle
-            sed -i '/dependencies {/a \    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"' android/app/build.gradle
-          fi
+          # Ghi đè file android/app/build.gradle (Groovy) chuẩn xác
+          cat << 'EOF' > android/app/build.gradle
+          plugins {
+              id "com.android.application"
+              id "kotlin-android"
+              id "dev.flutter.flutter-gradle-plugin"
+          }
+
+          android {
+              namespace = "com.example.siesta_suc_khoe"
+              compileSdk = 36
+              ndkVersion = "28.2.13676358"
+
+              compileOptions {
+                  coreLibraryDesugaringEnabled true
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+
+              kotlinOptions {
+                  jvmTarget = '17'
+              }
+
+              defaultConfig {
+                  applicationId = "com.example.siesta_suc_khoe"
+                  minSdk = 24
+                  targetSdk = 36
+                  versionCode = 1
+                  versionName = "1.0"
+                  multiDexEnabled = true
+              }
+
+              buildTypes {
+                  release {
+                      signingConfig = signingConfigs.debug
+                      minifyEnabled = false
+                      shrinkResources = false
+                  }
+              }
+          }
+
+          dependencies {
+              coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+          }
+
+          flutter {
+              source = '../..'
+          }
+          EOF
+
+          # Ghi đè file android/app/build.gradle.kts (Kotlin DSL) nếu hệ thống ưu tiên Kotlin
+          cat << 'EOF' > android/app/build.gradle.kts
+          plugins {
+              id("com.android.application")
+              id("kotlin-android")
+              id("dev.flutter.flutter-gradle-plugin")
+          }
+
+          android {
+              namespace = "com.example.siesta_suc_khoe"
+              compileSdk = 36
+              ndkVersion = "28.2.13676358"
+
+              compileOptions {
+                  isCoreLibraryDesugaringEnabled = true
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+
+              defaultConfig {
+                  applicationId = "com.example.siesta_suc_khoe"
+                  minSdk = 24
+                  targetSdk = 36
+                  versionCode = 1
+                  versionName = "1.0"
+                  multiDexEnabled = true
+              }
+
+              buildTypes {
+                  release {
+                      signingConfig = signingConfigs.getByName("debug")
+                      isMinifyEnabled = false
+                      isShrinkResources = false
+                  }
+              }
+          }
+
+          dependencies {
+              coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+          }
+
+          flutter {
+              source = "../.."
+          }
+          EOF
 
       - name: Install Dependencies
         run: |
