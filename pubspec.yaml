@@ -14,7 +14,7 @@ dependencies:
   camera: ^0.11.0+2
 
   # Dịch vụ chạy nền định kỳ ngắt quãng không làm nóng Oppo A5 Pro 5G
-  flutter_background_service: ^2.4.9
+  flutter_background_service: ^5.0.0
   flutter_local_notifications: ^17.2.1
 
   # Phát âm thanh chữa lành Lo-Fi & đọc file giọng nói custom (.mp3 / .wav)
