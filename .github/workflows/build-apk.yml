@@ -89,9 +89,9 @@ jobs:
                   applicationId = "com.example.siesta_suc_khoe"
                   minSdk = 24
                   targetSdk = 36
-                  versionCode = 1
-                  versionName = "1.0"
-                  multiDexEnabled = true
+                  versionCode 1
+                  versionName "1.0"
+                  multiDexEnabled true
               }
 
               buildTypes {
@@ -139,7 +139,7 @@ jobs:
                   applicationId = "com.example.siesta_suc_khoe"
                   minSdk = 24
                   targetSdk = 36
-                  versionCode = 1
+                  versionCode 1
                   versionName = "1.0"
                   multiDexEnabled = true
               }
@@ -162,10 +162,13 @@ jobs:
           }
           EOF
 
-      - name: Install Dependencies
+      - name: Install Dependencies & Patch Plugins
         run: |
           cd app_build
           flutter pub get
+
+          # Tự động nâng compileSdk của tất cả thư viện phụ thuộc (đặc biệt là file_picker) lên Android 36
+          find /home/runner/.pub-cache -name "build.gradle*" -exec sed -i 's/compileSdkVersion [0-9]*/compileSdkVersion 36/g; s/compileSdk = [0-9]*/compileSdk = 36/g; s/compileSdk [0-9]*/compileSdk 36/g' {} + 2>/dev/null || true
 
       - name: Compile Release APK
         run: |
