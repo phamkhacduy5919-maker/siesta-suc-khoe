@@ -61,6 +61,9 @@ jobs:
           [ -f pubspec.yaml ] && cp pubspec.yaml app_build/pubspec.yaml
           [ -f AndroidManifest.xml ] && cp AndroidManifest.xml app_build/android/app/src/main/AndroidManifest.xml
 
+          # Tự động loại bỏ thuộc tính package thừa trong AndroidManifest.xml theo chuẩn Android mới
+          sed -i 's/package="[^"]*"//g' app_build/android/app/src/main/AndroidManifest.xml 2>/dev/null || true
+
           cd app_build
           sed -i 's/compileSdk = .*/compileSdk = 36/g' android/app/build.gradle* 2>/dev/null || true
           sed -i 's/compileSdkVersion .*/compileSdkVersion 36/g' android/app/build.gradle* 2>/dev/null || true
