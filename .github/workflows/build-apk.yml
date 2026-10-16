@@ -26,130 +26,64 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Auto-organize files & configure Android 36 + Desugaring
+      - name: Setup Global Gradle Fixes
         run: |
-          mkdir -p temp_backup
-          cp -r *.dart *.yaml *.gradle *.xml temp_backup/ 2>/dev/null || true
-
-          flutter create --org com.example.siesta_suc_khoe --platforms=android --project-name=siesta_suc_khoe .
-
-          # Xóa các file kts trùng lặp do Flutter mới sinh ra
-          rm -f android/app/build.gradle.kts android/build.gradle.kts android/settings.gradle.kts 2>/dev/null || true
-
-          mkdir -p lib/screens lib/services lib/providers lib/theme
-          mkdir -p android/app/src/main
-
-          [ -f temp_backup/main.dart ] && cp temp_backup/main.dart lib/main.dart
-          [ -f temp_backup/y2k_theme.dart ] && cp temp_backup/y2k_theme.dart lib/theme/y2k_theme.dart
-          [ -f temp_backup/login_screen.dart ] && cp temp_backup/login_screen.dart lib/screens/login_screen.dart
-          [ -f temp_backup/dashboard_screen.dart ] && cp temp_backup/dashboard_screen.dart lib/screens/dashboard_screen.dart
-          [ -f temp_backup/settings_screen.dart ] && cp temp_backup/settings_screen.dart lib/screens/settings_screen.dart
-          [ -f temp_backup/ai_siesta_service.dart ] && cp temp_backup/ai_siesta_service.dart lib/services/ai_siesta_service.dart
-          [ -f temp_backup/background_service.dart ] && cp temp_backup/background_service.dart lib/services/background_service.dart
-          [ -f temp_backup/soul_battery_provider.dart ] && cp temp_backup/soul_battery_provider.dart lib/providers/soul_battery_provider.dart
-          [ -f temp_backup/AndroidManifest.xml ] && cp temp_backup/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
-          [ -f temp_backup/pubspec.yaml ] && cp temp_backup/pubspec.yaml pubspec.yaml
-
-          # Cấu hình root android/build.gradle để triệt tiêu lỗi AarMetadata
-          cat << 'EOF' > android/build.gradle
+          mkdir -p ~/.gradle
+          cat << 'EOF' > ~/.gradle/init.gradle
           allprojects {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-
-          rootProject.buildDir = '../build'
-          subprojects {
-              project.buildDir = "\${rootProject.buildDir}/\${project.name}"
-          }
-          subprojects {
-              project.evaluationDependsOn(':app')
-          }
-
-          subprojects {
               afterEvaluate { project ->
-                  if (project.hasProperty('android')) {
+                  if (project.hasProperty("android")) {
                       project.android {
                           compileSdkVersion 36
                       }
                   }
-                  tasks.matching { it.name.contains('AarMetadata') }.configureEach {
+                  tasks.matching { it.name.contains("AarMetadata") }.configureEach {
                       enabled = false
                   }
               }
           }
-
-          tasks.register("clean", Delete) {
-              delete rootProject.buildDir
-          }
           EOF
 
-          # Cấu hình android/app/build.gradle chuẩn xác với NDK 28
-          cat << 'EOF' > android/app/build.gradle
-          plugins {
-              id "com.android.application"
-              id "kotlin-android"
-              id "dev.flutter.flutter-gradle-plugin"
-          }
+      - name: Create Clean Flutter Project & Arrange Code
+        run: |
+          flutter create --org com.example.siesta_suc_khoe --platforms=android --project-name=siesta_suc_khoe app_build
 
-          android {
-              namespace "com.example.siesta_suc_khoe"
-              compileSdk 36
-              ndkVersion = "28.2.13676358"
+          mkdir -p app_build/lib/screens app_build/lib/services app_build/lib/providers app_build/lib/theme
 
-              compileOptions {
-                  coreLibraryDesugaringEnabled true
-                  sourceCompatibility JavaVersion.VERSION_17
-                  targetCompatibility JavaVersion.VERSION_17
-              }
+          [ -f main.dart ] && cp main.dart app_build/lib/main.dart
+          [ -f y2k_theme.dart ] && cp y2k_theme.dart app_build/lib/theme/y2k_theme.dart
+          [ -f login_screen.dart ] && cp login_screen.dart app_build/lib/screens/login_screen.dart
+          [ -f dashboard_screen.dart ] && cp dashboard_screen.dart app_build/lib/screens/dashboard_screen.dart
+          [ -f settings_screen.dart ] && cp settings_screen.dart app_build/lib/screens/settings_screen.dart
+          [ -f ai_siesta_service.dart ] && cp ai_siesta_service.dart app_build/lib/services/ai_siesta_service.dart
+          [ -f background_service.dart ] && cp background_service.dart app_build/lib/services/background_service.dart
+          [ -f soul_battery_provider.dart ] && cp soul_battery_provider.dart app_build/lib/providers/soul_battery_provider.dart
+          [ -f pubspec.yaml ] && cp pubspec.yaml app_build/pubspec.yaml
+          [ -f AndroidManifest.xml ] && cp AndroidManifest.xml app_build/android/app/src/main/AndroidManifest.xml
 
-              kotlinOptions {
-                  jvmTarget = '17'
-              }
+          cd app_build
+          sed -i 's/compileSdk = .*/compileSdk = 36/g' android/app/build.gradle* 2>/dev/null || true
+          sed -i 's/compileSdkVersion .*/compileSdkVersion 36/g' android/app/build.gradle* 2>/dev/null || true
+          sed -i 's/targetSdk = .*/targetSdk = 36/g' android/app/build.gradle* 2>/dev/null || true
 
-              defaultConfig {
-                  applicationId "com.example.siesta_suc_khoe"
-                  minSdk 24
-                  targetSdk 36
-                  versionCode 1
-                  versionName "1.0"
-                  multiDexEnabled true
-
-                  ndk {
-                      abiFilters 'arm64-v8a', 'armeabi-v7a'
-                  }
-              }
-
-              buildTypes {
-                  release {
-                      signingConfig signingConfigs.debug
-                      minifyEnabled false
-                      shrinkResources false
-                  }
-              }
-          }
-
-          dependencies {
-              coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
-          }
-
-          flutter {
-              source '../..'
-          }
-          EOF
-
-          rm -rf temp_backup
+          if [ -f android/app/build.gradle ]; then
+            sed -i '/compileOptions {/a \        coreLibraryDesugaringEnabled true' android/app/build.gradle
+            sed -i '/dependencies {/a \    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"' android/app/build.gradle
+          fi
 
       - name: Install Dependencies
-        run: flutter pub get
+        run: |
+          cd app_build
+          flutter pub get
 
       - name: Compile Release APK
-        run: flutter build apk --release --no-tree-shake-icons
+        run: |
+          cd app_build
+          flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK File
         uses: actions/upload-artifact@v4
         with:
           name: siesta-suc-khoe-oppo-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: app_build/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 14
